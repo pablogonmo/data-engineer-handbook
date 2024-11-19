@@ -1,7 +1,7 @@
 # 📅 Data Modeling
 
 This repository contains the setup for the data modeling modules in Weeks 1 and 2.
-
+ 
 :wrench: **Tech Stack**
 
 - Git
@@ -140,6 +140,12 @@ There are two methods to get Postgres running locally.
     ```
     
     - → This will run the file `data.dump` from inside your psql REPL.
+
+- If you did the setup using Option 2, and the tables are not in the database, another solution is to: 
+
+1. Find the container id by running `docker ps` - under CONTAINER ID
+2. Go inside the container by executing `docker exec -it <container_name_or_id> bash`
+3. Run `pg_restore -U $POSTGRES_USER -d $POSTGRES_DB /docker-entrypoint-initdb.d/data.dump` 
 
 ---
 
