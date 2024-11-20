@@ -1,6 +1,5 @@
--- Active: 1697237013122@@127.0.0.1@5432@postgres@public
-
-/*SELECT * FROM player_seasons
+SELECT * FROM player_seasons order by player_name
+;
 
 CREATE TYPE season_stats AS (
     season INTEGER,
@@ -8,10 +7,10 @@ CREATE TYPE season_stats AS (
     pts REAL,
     reb REAL,
     ast REAL 
-)
+);
 
-
-create type scoring_class as enum ('star','good','average','bad');
+create type scoring_class as enum ('star','good','average','bad')
+;
 
 CREATE TABLE players (
     player_name TEXT,
@@ -26,12 +25,10 @@ CREATE TABLE players (
     years_since_last_season INTEGER,
     current_season INTEGER,
     PRIMARY KEY (player_name, current_season)
-)
-*/
+);
 
-
-select min(season), max(season) from player_seasons;
-
+select min(season), max(season) from player_seasons
+;
 
 insert into players
 with yesterday as (
@@ -69,7 +66,6 @@ from today t full outer join yesterday y
     on t.player_name = y.player_name
 ;
 
-
 with unnested as (
     select player_name,
         unnest(season_stats)::season_stats as season_stats
@@ -80,7 +76,6 @@ select player_name,
 from unnested
 ;
 
-
 select
     player_name,
     (season_stats[1]::season_stats).pts as first_season,
@@ -89,4 +84,5 @@ select
     (season_stats[cardinality(season_stats)]::season_stats).pts /
     case when (season_stats[1]::season_stats).pts=0 then 1 else (season_stats[1]::season_stats).pts end
 from players
-where current_season = 2001;
+where current_season = 2001
+;
