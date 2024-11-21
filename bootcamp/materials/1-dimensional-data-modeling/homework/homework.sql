@@ -98,9 +98,8 @@ create table actors_history_scd
 -- 4. **Backfill query for `actors_history_scd`:** Write a "backfill" query that can populate the entire `actors_history_scd` table in a single query.
 insert into actors_history_scd
 with with_previous as (
-	select
-		actor,
-        actorid,
+	select actor,
+		actorid,
 		current_year,
 		quality_class,
 		is_active,
