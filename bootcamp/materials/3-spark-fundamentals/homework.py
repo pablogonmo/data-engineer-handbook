@@ -137,19 +137,77 @@ val bucketJoin = match_details.as("d")
 #.take(5)
 
 
+# Stop the Spark session
+spark.stop()
+
+
 ''' 
 Aggregate the joined data frame to figure out questions like:
     Which player averages the most kills per game?
     Which playlist gets played the most?
     Which map gets played the most?
     Which map do players get the most Killing Spree medals on?
-'''
 
-
-'''
 With the aggregated data set
     Try different .sortWithinPartitions to see which has the smallest data size (hint: playlists and maps are both very low cardinality)
 '''
+
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.SparkSession
+
+val spark = SparkSession.builder()
+  .appName("Spark Aggregations")
+  .config("spark.sql.autoBroadcastJoinThreshold", "-1")
+  .getOrCreate()
+
+# Load datasets
+val matchDetails = spark.read.option("header", "true").option("inferSchema", "true").csv("/home/iceberg/data/match_details.csv")
+val medalMatchesPlayers = spark.read.option("header", "true").option("inferSchema", "true").csv("/home/iceberg/data/medals_matches_players.csv")
+val matches = spark.read.option("header", "true").option("inferSchema", "true").csv("/home/iceberg/data/matches.csv")
+val medals = spark.read.option("header", "true").option("inferSchema", "true").csv("/home/iceberg/data/medals.csv")
+val maps = spark.read.option("header", "true").option("inferSchema", "true").csv("/home/iceberg/data/maps.csv")
+
+# Perform bucketed joins
+val joinedData = matchDetails.as("d")
+  .join(medalMatchesPlayers.as("p"), $"d.match_id" === $"p.match_id")
+  .join(matches.as("m"), $"d.match_id" === $"m.match_id")
+  .join(maps.as("mp"), $"m.mapid" === $"mp.mapid")
+  .join(medals.as("md"), $"p.medal_id" === $"md.medal_id")
+
+# Aggregation: Player with the most kills per game
+val mostKillsPerGame = joinedData
+  .groupBy("p.player_id")
+  .agg(avg("p.kills").alias("avg_kills"))
+  .orderBy(desc("avg_kills"))
+
+# Aggregation: Most played playlist
+val mostPlayedPlaylist = joinedData
+  .groupBy("m.playlist")
+  .agg(count("m.match_id").alias("play_count"))
+  .orderBy(desc("play_count"))
+
+# Aggregation: Most played map
+val mostPlayedMap = joinedData
+  .groupBy("mp.name")
+  .agg(count("m.match_id").alias("map_play_count"))
+  .orderBy(desc("map_play_count"))
+
+# Aggregation: Map with most Killing Spree medals
+val mostKillingSpreeMap = joinedData
+  .filter($"md.classification" === "Killing Spree")
+  .groupBy("mp.name")
+  .agg(count("md.medal_id").alias("killing_spree_count"))
+  .orderBy(desc("killing_spree_count"))
+
+# Sorting optimizations
+val sortedByPlaylist = joinedData.sortWithinPartitions("m.playlist")
+val sortedByMap = joinedData.sortWithinPartitions("mp.name")
+
+# Show results
+mostKillsPerGame.show(false)
+mostPlayedPlaylist.show(false)
+mostPlayedMap.show(false)
+mostKillingSpreeMap.show(false)
 
 # Stop the Spark session
 spark.stop()
