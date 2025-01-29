@@ -1,4 +1,5 @@
-FROM --platform=linux/amd64 flink:1.16.2
+#FROM --platform=linux/amd64 flink:1.16.2
+FROM flink:1.16.2
 
 # install python3: it has updated Python to 3.9 in Debian 11 and so install Python 3.7 from source
 # it currently only supports Python 3.6, 3.7 and 3.8 in PyFlink officially.
